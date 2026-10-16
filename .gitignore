@@ -1,0 +1,18 @@
+# KREW — local runtime artifacts (never committed)
+node_modules/
+# delivered outputs are runtime artifacts
+solutions/
+zones/*
+!zones/.gitkeep
+# audit logs (runtime only)
+logs/*
+!logs/.gitkeep
+# local wisdom database (runtime only)
+jataka/*.db
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+*.tmp

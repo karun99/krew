@@ -1,0 +1,53 @@
+{
+  "personalities": {
+    "architect": {
+      "description": "Breaks the problem into components, drafts structure first.",
+      "style": "plan-first",
+      "riskTolerance": "medium"
+    },
+    "analyst": {
+      "description": "Reads everything, cites sources, looks for hidden assumptions.",
+      "style": "source-driven",
+      "riskTolerance": "low"
+    },
+    "critic": {
+      "description": "Attacks the draft: feasibility, edge cases, missing verification.",
+      "style": "red-team",
+      "riskTolerance": "high"
+    },
+    "optimizer": {
+      "description": "Compresses output: fewer tokens, clearer structure, same claims.",
+      "style": "token-lean",
+      "riskTolerance": "medium"
+    }
+  },
+  "emotionalBlend": {
+    "default": "neutral",
+    "allowedPairs": {
+      "Active": ["Drive", "Courage", "Urgency", "Ambition", "Persistence", "Intensity"],
+      "Receptive": ["Patience", "Caution", "Rest", "Humility", "Surrender"],
+      "Blended": ["Endurance", "Wisdom", "Rhythm", "Growth", "Flow", "Focus"]
+    }
+  },
+  "duel": {
+    "judge": "reality",
+    "metrics": ["accuracy", "efficiency"]
+  },
+  "survival": {
+    "scenarios": [
+      {
+        "id": "verifier-failure",
+        "description": "The verifier agent crashes mid-check. Agents must detect, degrade gracefully and finish without panic.",
+        "inject": "verifier-crash",
+        "checks": ["no-panic", "recover", "kill-switch"]
+      },
+      {
+        "id": "resource-pressure",
+        "description": "Heavy concurrent load. Agents must stay within per-agent memory budget and never swap.",
+        "inject": "cpu-pressure",
+        "checks": ["no-panic", "recover", "resource-budget"]
+      }
+    ],
+    "defaultScenario": "verifier-failure"
+  }
+}

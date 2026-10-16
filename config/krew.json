@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "backend": {
+    "type": "auto",
+    "openrouter": {
+      "apiKeyEnv": "OPENROUTER_API_KEY",
+      "model": "auto"
+    },
+    "openai": {
+      "apiKeyEnv": "OPENAI_API_KEY",
+      "model": "gpt-4o-mini"
+    },
+    "local": {
+      "endpoint": "http://localhost:11434/v1"
+    }
+  },
+  "agents": {
+    "maxConcurrent": 10,
+    "perAgentMemoryMB": 50
+  },
+  "killSwitch": {
+    "enabled": true
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "temporal": {
+    "phaseGating": true,
+    "cooldownMs": 2000,
+    "maxMutationsPerAgent": 20
+  },
+  "spatial": {
+    "zoneIsolation": true,
+    "autoSpawnZones": true
+  },
+  "correlation": {
+    "emergenceDetection": true,
+    "maxEmergenceScore": 0.85
+  },
+  "logging": {
+    "logAllMutations": true,
+    "logAllCoordination": true
+  },
+  "killSwitch": {
+    "enabled": true
+  }
+}

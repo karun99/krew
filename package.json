@@ -1,0 +1,14 @@
+{
+  "name": "krew",
+  "version": "0.1.0",
+  "description": "Kali-Regulated Emotional Workflow — a localised, multi-agent AI orchestration system that is fast, light, accurate, regulated and resilient.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "private": true,
+  "scripts": {
+    "krew": "node core/krew.ts"
+  }
+}
