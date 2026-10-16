@@ -115,6 +115,9 @@ $ ./run.sh kill
 Activates the kill switch immediately (measured in milliseconds). Every
 running agent stops within one second. Run `status` to confirm.
 
+The kill switch is per KREW process: if no agent is running when the command
+starts, it simply records the activation for the current session.
+
 ## `status` — observe a running KREW
 
 ```
