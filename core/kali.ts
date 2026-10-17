@@ -204,7 +204,7 @@ export class Kali {
     try {
       const dir = path.join(findRoot(), "logs");
       if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-      appendFileSync(path.join(dir, "logs", "audit.log"), JSON.stringify(entry) + "\n", "utf8");
+      appendFileSync(path.join(dir, "audit.log"), JSON.stringify(entry) + "\n", "utf8");
     } catch {
       /* audit logging is best-effort */
     }

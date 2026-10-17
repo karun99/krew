@@ -12,6 +12,7 @@ produces a working solution, using regulated and emotionally resilient agents.
 - **Regulated** — every mutation and coordination passes through **Kali**
 - **Resilient** — **Shatkona** blends emotional modes for endurance
 - **Operational (TRL 7)** — a working prototype demonstrated on real tasks
+- **Qualified (TRL 8)** — complete and passing its own qualification suite
 
 ## Quick start (Linux)
 
@@ -41,6 +42,9 @@ run.bat           # launch the KREW CLI
 | `kill`     | Activate the kill switch (stop all agents immediately)         |
 | `status`   | Show zones, agents and recent audit activity                   |
 | `config`   | Show / edit KREW configuration                                |
+| `write`    | Turn a work process into a Body+Soul algorithm document       |
+| `execute`  | Compile and run an algorithm document (done means verified)   |
+| `qualify`  | Run the TRL 8 qualification suite (11 acceptance criteria)     |
 | `help`     | List commands                                                |
 
 ## Documentation

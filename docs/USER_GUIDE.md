@@ -127,6 +127,69 @@ $ ./run.sh status
 Shows the backend in use, spawned agents, the kill switch state, the active
 emotional mode, and the most recent audit entries from `logs/audit.log`.
 
+## `write` — turn a process into an algorithm document (Workflow Writer)
+
+```
+$ ./run.sh write process.txt --soul "Never approve an invoice without a matching PO."
+```
+
+The Workflow Writer front-door takes any work process — prose, SOP, syllabus,
+ticket list, diagram notes, table or a mix — and emits ONE algorithm document
+(`algorithms/<name>.yaml`) with two mandatory parts:
+
+- **Body** — inputs, outputs, success condition, steps with explicit operators,
+  preconditions and postconditions, failure policy, termination and escalation.
+- **Soul** — intent, voice, 3–7 values (each with an observable proxy and a
+  verdict type), quality-of-spirit clauses and guardrails, every clause bound
+  to an enforcing operator.
+
+The document is the single source of truth: it is emitted as YAML and parsed
+back by the same engine, so what you review is exactly what runs. Every write
+prints the Body self-check and Soul check results plus any open questions —
+inferred postconditions are flagged for review, never silently trusted.
+
+The canonical prompt that drives this mechanism ships unmodified in
+`config/ww-prompt.md` (Workflow Writer with Soul).
+
+## `execute` — compile and run an algorithm document
+
+```
+$ ./run.sh execute algorithms/collect-all-invoices-from.yaml
+```
+
+Compiles the Body+Soul document and executes it under Kali regulation. Every
+step: the precondition is checked, the operator agent runs, the output must
+verify against the step's postcondition, and the Soul clauses must hold. A
+step that fails its postcondition is retried per its `on_fail` policy, then
+escalated to a human — downstream steps never run on unverified output. The
+run report is written to `solutions/<algorithm>.workflow.json`.
+
+## `qualify` — the TRL 8 qualification suite
+
+```
+$ ./run.sh qualify
+```
+
+Runs the scriptable acceptance tests that prove the system is complete and
+qualified (TRL 8), not merely demonstrated (TRL 7):
+
+| Criterion | What it proves |
+|---|---|
+| documentation-complete | SRS, INSTALL, USER_GUIDE, README present |
+| cross-platform-scripts | Linux `.sh` + Windows `.bat`/`.ps1` launchers |
+| kill-switch-latency | emergency stop well under one second |
+| guardrails-functional | all eight guardrails evaluate and pass |
+| workflow-writer-roundtrip | YAML emit → parse is identical; checks clean |
+| verification-gates | declared claims verified, no unverified pass |
+| resource-budget | per-agent memory budget defined and enforced |
+| audit-trail | `logs/audit.log` receives regulation events |
+| emotional-blend | six drives blended; `neutral` mode available |
+| backend-deterministic | identical input → identical output, offline |
+| cli-functional | `help` and `config` run without error |
+
+The suite exits non-zero if any criterion fails, so it can gate CI or
+installation. Results are saved to `solutions/qualification.json`.
+
 ## Audit trail
 
 All mutations, coordination requests, approvals and the kill switch are

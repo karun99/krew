@@ -1,0 +1,124 @@
+algorithm: collect-all-invoices-from
+version: 0.1.0
+format: sop
+soul:
+  intent: Never approve an invoice without a matching purchase order.
+  voice: "clear, honest, terse"
+  values:
+    - id: V1
+      statement: Never approve an invoice without a matching purchase order.
+      observable_proxy: every step output reflects the stated intent and declared sources
+      verdict: "pass|fail"
+      enforced_by: op-qa
+      advisory: false
+    - id: V2
+      statement: "Explain, do not just answer."
+      observable_proxy: "each output names the reasoning, not only the conclusion"
+      verdict: score(0..1)
+      threshold: 0.8
+      enforced_by: op-qa
+      advisory: false
+    - id: V3
+      statement: "Respect the reader's time."
+      observable_proxy: "outputs are concise, structured, and free of filler"
+      verdict: score(0..1)
+      threshold: 0.75
+      enforced_by: op-qa
+      advisory: false
+  quality_of_spirit:
+    - id: Q1
+      name: clarity
+      observable_proxy: "output is structured, readable and free of jargon soup"
+      verdict: score(0..1)
+      threshold: 0.75
+  guardrails:
+    - id: G1
+      statement: Never fabricate content even if a boolean check would pass.
+      enforced_by: op-qa
+purpose: - Collect all invoices from the shared inbox
+inputs:
+  process: text
+outputs:
+  solution: text
+success_condition: every step is verified and qa-verify passes
+termination:
+  success: END
+  failure: ESCALATE
+  escalate_to: human
+roles:
+  - id: builder
+    responsibility: Executes the declared steps.
+    does_not: Never skips verification.
+    owns_decision: How each step is executed.
+  - id: qa_verifier
+    responsibility: Verifies every step output.
+    does_not: Never produces deliverable content.
+    owns_decision: Whether an output is verified.
+operators:
+  - id: op-builder
+    role: builder
+    kind: agent
+    capabilities: [write]
+  - id: op-qa
+    role: qa_verifier
+    kind: agent
+    capabilities: [verify]
+steps:
+  - id: S1
+    name: collect-all-invoices-from
+    operator: op-builder
+    depends_on: []
+    precondition: process description non-empty
+    action: Collect all invoices from the shared inbox
+    output_schema: text
+    postcondition: "output is non-empty and mentions Collect, invoices, from, shared"
+    soul_refs: [V1, Q1]
+    on_fail: retry:1,then:escalate
+  - id: S2
+    name: match-each-invoice-against
+    operator: op-builder
+    depends_on: [S1]
+    precondition: S1 completed and verified
+    action: Match each invoice against the purchase order
+    output_schema: text
+    postcondition: "output is non-empty and mentions Match, each, invoice, against"
+    soul_refs: [V1, Q1]
+    on_fail: retry:1,then:escalate
+  - id: S3
+    name: flag-mismatches-for-the
+    operator: op-builder
+    depends_on: [S2]
+    precondition: S2 completed and verified
+    action: Flag mismatches for the finance lead
+    output_schema: text
+    postcondition: "output is non-empty and mentions Flag, mismatches, finance, lead"
+    soul_refs: [V1, Q1]
+    on_fail: retry:1,then:escalate
+  - id: S4
+    name: send-the-summary-report
+    operator: op-builder
+    depends_on: [S3]
+    precondition: S3 completed and verified
+    action: Send the summary report on Friday
+    output_schema: text
+    postcondition: "output is non-empty and mentions Send, summary, report, Friday"
+    soul_refs: [V1, Q1]
+    on_fail: retry:1,then:escalate
+  - id: S5
+    name: qa-verify
+    operator: op-qa
+    depends_on: [S4]
+    precondition: S4 completed and verified
+    action: "Verify every output of this workflow: claims traceable, no fabricated content, soul clauses honored."
+    output_schema: verification
+    postcondition: every output is verified by qa_verifier
+    soul_refs: [V1, Q1, G1]
+    on_fail: retry:0,then:escalate
+constraints:
+  deterministic: true
+  cache_outputs: true
+  budgets: max_tokens:8192,timeout_ms:60000
+assumptions:
+  - postconditions were inferred from the process text; review before production use.
+open_questions:
+  - "Are the inferred postconditions the real completion rules for each step?"

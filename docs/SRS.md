@@ -633,7 +633,62 @@ To claim TRL 7, KREW must demonstrate:
 
 ---
 
-## 12. 🔏 APPROVAL
+## 12. TRL 8 ADDENDUM (v0.2.0)
+
+TRL 7 proves the prototype works in its environment; TRL 8 requires the system
+to be **complete and qualified** — every requirement implemented, and
+qualification tests passing in the intended environment. v0.2.0 adds the two
+components that close that gap, plus a scriptable qualification suite that
+verifies it on demand (`krew qualify`).
+
+### 12.1 Workflow Writer front-door (Body + Soul)
+
+New requirement FR-W (workflow authoring):
+
+| ID | Requirement | Status |
+|----|-------------|--------|
+| FR-W1 | Accept a work process in ANY format (prose, SOP, syllabus, tickets, diagram, table, mix) and detect the format | ✅ `write` |
+| FR-W2 | Emit ONE algorithm document: Body (steps, pre/postconditions, operators, failure policy, termination) + Soul (intent, values, quality-of-spirit, guardrails — each observable and verdict-typed) | ✅ `write` |
+| FR-W3 | Run Body self-check and Soul check on every document; flag unverifiable clauses as advisory and list open questions | ✅ `write` |
+| FR-W4 | Treat the document as the single source of truth: emit YAML and parse back identically (round-trip proven by the suite) | ✅ `write`/`execute` |
+| FR-W5 | Compile and execute the document under Kali regulation: a step is done ONLY when its postcondition verifies; failures retry per policy, then escalate to a human; downstream steps never run on unverified output | ✅ `execute` |
+
+The canonical authoring prompt (Workflow Writer with Soul) ships unmodified in
+`config/ww-prompt.md`; `core/writer.ts` implements the deterministic engine
+(format detection, drafting, checks, YAML round-trip, verified execution).
+
+### 12.2 Qualification suite (`qualify`)
+
+Eleven scriptable acceptance criteria, exit-code gated for CI:
+
+1. documentation-complete — SRS, INSTALL, USER_GUIDE, README present
+2. cross-platform-scripts — `.sh` + `.bat` + `.ps1` launchers present
+3. kill-switch-latency — measured under 1000 ms
+4. guardrails-functional — all 8 guardrails evaluate and pass
+5. workflow-writer-roundtrip — YAML emit→parse identical; checks clean
+6. verification-gates — declared claims verified; none unverified pass
+7. resource-budget — per-agent budget defined and enforced
+8. audit-trail — `logs/audit.log` receives regulation events
+9. emotional-blend — six drives blended; `neutral` available
+10. backend-deterministic — identical input → identical output, offline
+11. cli-functional — `help` and `config` run without error
+
+Current result: **11/11 PASSED** (see `solutions/qualification.json`).
+
+### 12.3 Mapping to the original constraints
+
+| Original constraint | TRL 8 evidence |
+| ------------------- | -------------- |
+| FR-ACC-1 verified outputs | verification-gates criterion |
+| FR-K7 / FR-K8 audit trail | audit-trail criterion |
+| FR-R1 kill switch < 1 s | kill-switch-latency criterion |
+| FR-S1 emotional blend | emotional-blend criterion |
+| NFR resource bounds | resource-budget criterion |
+| TRL 7 acceptance criteria (§11) | all still enforced; qualify re-runs them |
+
+---
+
+## 13. 🔏 APPROVAL
 
 | Role | Name | Signature | Date |
 | ---- | ---- | --------- | --- |

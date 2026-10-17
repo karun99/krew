@@ -8,6 +8,9 @@
  *   kill                                 activate the kill switch
  *   status                               show agents, zones, kill switch
  *   config                               show configuration
+ *   write <process.txt> [--soul "..."]   turn a process into a Body+Soul document
+ *   execute <algorithm.yaml>             compile and run an algorithm document
+ *   qualify                              run the TRL 8 qualification suite
  *   help                                 list commands
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -26,6 +29,15 @@ import { runSurvival } from "./survival.ts";
 import { runGuardrails, type GuardrailContext } from "./guardrails.ts";
 import { verify, type VerificationContext, type VerificationResult, type VerificationSource } from "./reality.ts";
 import { Kali, type ZoneLookup } from "./kali.ts";
+import {
+  buildAlgorithm,
+  emitYaml,
+  executeAlgorithm,
+  parseYaml,
+  selfCheck,
+  soulCheck,
+} from "./writer.ts";
+import { runQualification } from "./qualify.ts";
 
 interface ProblemDefinition {
   goal: string;
@@ -64,6 +76,15 @@ async function main(): Promise<void> {
       case "config":
         configCommand(args.slice(1));
         break;
+      case "write":
+        await writeCommand(args.slice(1));
+        break;
+      case "execute":
+        await executeCommand(args.slice(1));
+        break;
+      case "qualify":
+        await qualifyCommand();
+        break;
       default:
         printHelp();
         process.stderr.write(`unknown command: ${command}\n`);
@@ -85,6 +106,9 @@ commands:
   kill                                    activate the kill switch
   status                                  show agents, zones, kill switch
   config                                  show configuration
+  write <process.txt> [--soul "..."]     turn a process into a Body+Soul algorithm document
+  execute <algorithm.yaml>               compile and run an algorithm document
+  qualify                                 run the TRL 8 qualification suite
   help                                    this help
 `);
 }
@@ -115,10 +139,15 @@ function createKali(zones: ZoneLookup): Kali {
   return kali;
 }
 
-function newManager(backend: Backend): AgentManager {
+function newManagerAndKali(backend: Backend): { manager: AgentManager; kali: Kali } {
   const zones = new RegistryZones();
   const kali = createKali(zones);
-  return new AgentManager(kali, backend, zones);
+  const manager = new AgentManager(kali, backend, zones);
+  return { manager, kali };
+}
+
+function newManager(backend: Backend): AgentManager {
+  return newManagerAndKali(backend).manager;
 }
 
 function loadProblem(file: string): ProblemDefinition {
@@ -374,5 +403,84 @@ function configCommand(rest: string[]): void {
     process.stdout.write("configuration reloaded\n");
   }
 }
+
+// -------------------------------------------------------------------- write
+async function writeCommand(rest: string[]): Promise<void> {
+  const file = rest[0];
+  if (!file) throw new Error("write needs a process file, e.g. `write process.txt --soul \"...\"`");
+  const soulIndex = rest.indexOf("--soul");
+  const soulLine = soulIndex >= 0 ? rest[soulIndex + 1] : undefined;
+  const processText = readFileSync(file, "utf8");
+  const model = buildAlgorithm({ processText, soulLine });
+
+  const bodyIssues = selfCheck(model);
+  const soulIssues = soulCheck(model);
+  const yaml = emitYaml(model);
+  const dir = path.join(findRoot(), "algorithms");
+  mkdirSync(dir, { recursive: true });
+  const outFile = path.join(dir, `${model.algorithm}.yaml`);
+  writeFileSync(outFile, yaml, "utf8");
+
+  process.stdout.write(
+    `algorithm '${model.algorithm}' written (${model.format} input)\n` +
+      `  steps: ${model.steps.length}\n` +
+      `  soul values: ${model.soul.values.length}, guardrails: ${model.soul.guardrails.length}\n` +
+      `  self-check (body): ${bodyIssues.length === 0 ? "clean" : bodyIssues.join("; ")}\n` +
+      `  soul-check: ${soulIssues.length === 0 ? "clean" : soulIssues.join("; ")}\n` +
+      `  open questions: ${model.open_questions.length}\n` +
+      `  document: ${outFile}\n` +
+      `Next: review the document, then \`execute ${outFile}\`.\n`,
+  );
+}
+
+// ----------------------------------------------------------------- execute
+async function executeCommand(rest: string[]): Promise<void> {
+  const file = rest[0];
+  if (!file) throw new Error("execute needs an algorithm document, e.g. `execute algorithms/my-algo.yaml`");
+  const model = parseYaml(readFileSync(file, "utf8"));
+  const issues = [...selfCheck(model), ...soulCheck(model)];
+  if (issues.length > 0) {
+    throw new Error(`algorithm document failed its checks: ${issues.join("; ")}`);
+  }
+  const backend = newBackend();
+  const { manager, kali } = newManagerAndKali(backend);
+  process.stdout.write(`executing algorithm '${model.algorithm}' (${model.steps.length} steps)\n`);
+  const report = await executeAlgorithm(model, manager, backend, kali);
+  for (const step of report.steps) {
+    process.stdout.write(
+      `  ${step.status === "verified" ? "✓" : step.status === "escalated" ? "✗" : "-"} ${step.stepId}: ${step.status} — ${step.detail}\n`,
+    );
+  }
+  const dir = path.join(findRoot(), "solutions");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(
+    path.join(dir, `${model.algorithm}.workflow.json`),
+    JSON.stringify({ at: Date.now(), algorithm: model.algorithm, report }, null, 2),
+    "utf8",
+  );
+  process.stdout.write(
+    `workflow ${report.success ? "verified" : "escalated"}: ` +
+      `${report.verified}/${model.steps.length} steps verified, ${report.totalTokens} tokens\n`,
+  );
+  if (!report.success) process.exitCode = 1;
+}
+
+// ----------------------------------------------------------------- qualify
+async function qualifyCommand(): Promise<void> {
+  process.stdout.write("running TRL 8 qualification suite...\n");
+  const report = await runQualification();
+  for (const check of report.checks) {
+    process.stdout.write(`  ${check.passed ? "✓" : "✗"} ${check.criterion}: ${check.detail}\n`);
+  }
+  const dir = path.join(findRoot(), "solutions");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(path.join(dir, "qualification.json"), JSON.stringify(report, null, 2), "utf8");
+  process.stdout.write(
+    `qualification ${report.passed ? "PASSED" : "FAILED"} ` +
+      `(${report.checks.filter((check) => check.passed).length}/${report.checks.length} criteria)\n`,
+  );
+  if (!report.passed) process.exitCode = 1;
+}
+
 await main();
 
